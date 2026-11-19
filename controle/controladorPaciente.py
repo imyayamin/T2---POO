@@ -1,11 +1,13 @@
 from entidade.paciente import Paciente
 from limite.telaPaciente import TelaPaciente
+from persistencia.repositorioPaciente import RepositorioPaciente
 from exceptions.exceptions import (AcompanhanteObrigatorioException, PacienteRepetidoException, PacienteNaoEncontradoException, EntradaInvalidaException, ListaVaziaException)
 
 class ControladorPaciente:
 
     def __init__(self, controladorGeral):
-        self.__pacientes = []
+        self.__repositorio = RepositorioPaciente()
+        self.__pacientes = self.__repositorio.carregar()
         self.__tela_paciente = TelaPaciente()
         self.__controladorGeral = controladorGeral
 
@@ -49,6 +51,7 @@ class ControladorPaciente:
 
             novo_paciente = Paciente(nome, celular, cpf, idade, acompanhante)
             self.__pacientes.append(novo_paciente)
+            self.__repositorio.salvar(self.__pacientes)
             self.__tela_paciente.mostra_mensagem("Paciente cadastrado com sucesso!")
 
         except (ValueError, PacienteRepetidoException, AcompanhanteObrigatorioException) as e:
@@ -66,11 +69,14 @@ class ControladorPaciente:
         except ListaVaziaException as e:
             self.__tela_paciente.mostra_mensagem(str(e))
             return
-        
+
         try:
             cpf = self.__tela_paciente.seleciona_paciente()
         except EntradaInvalidaException as e:
             self.__tela_paciente.mostra_mensagem(str(e))
+            return
+
+        if cpf is None:
             return
 
         try:
@@ -78,6 +84,7 @@ class ControladorPaciente:
             if paciente is None:
                 raise PacienteNaoEncontradoException(cpf)
             self.__pacientes.remove(paciente)
+            self.__repositorio.salvar(self.__pacientes)
             self.__tela_paciente.mostra_mensagem("Paciente removido com sucesso!")
         except PacienteNaoEncontradoException as e:
             self.__tela_paciente.mostra_mensagem(str(e))
