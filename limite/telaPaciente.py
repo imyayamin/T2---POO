@@ -80,9 +80,9 @@ class TelaPaciente:
 
         return valores["-ACOMPANHANTE-"].strip()
 
-    def seleciona_paciente(self):
+    def seleciona_paciente(self, paciente):
         layout = [
-            [sg.Text("CPF do paciente")],
+            [sg.Text(f"Confirme o CPF de {paciente.nome}")],
             [sg.Input(key="-CPF-")],
             [sg.Button("Remover", key="-REMOVER-"), sg.Button("Cancelar")],
         ]
@@ -99,7 +99,7 @@ class TelaPaciente:
         except (TypeError, ValueError):
             raise EntradaInvalidaException("CPF")
 
-    def lista_pacientes(self, pacientes):
+    def lista_pacientes(self, pacientes, permitir_selecao=False):
         linhas = [
             f"{indice} - {paciente.nome} - CPF: {paciente.cpf} - Idade: {paciente.idade}"
             for indice, paciente in enumerate(pacientes, start=1)
@@ -107,13 +107,42 @@ class TelaPaciente:
 
         layout = [
             [sg.Text("Pacientes cadastrados", font=("Segoe UI", 14, "bold"))],
-            [sg.Listbox(linhas, size=(60, 12), expand_x=True, expand_y=True)],
-            [sg.Button("Fechar")],
+            [
+                sg.Listbox(
+                    linhas,
+                    size=(60, 12),
+                    expand_x=True,
+                    expand_y=True,
+                    key="-PACIENTES-",
+                    enable_events=permitir_selecao,
+                )
+            ],
+            [
+                sg.Button("Fechar", key="-FECHAR-"),
+                sg.Button("Selecionar", key="-SELECIONAR-", visible=False),
+            ],
         ]
 
         janela = sg.Window("Lista de pacientes", layout, modal=True)
-        janela.read()
-        janela.close()
+        while True:
+            evento, valores = janela.read()
+
+            if evento in (sg.WIN_CLOSED, "-FECHAR-"):
+                janela.close()
+                return None
+
+            if permitir_selecao and evento == "-PACIENTES-":
+                janela["-SELECIONAR-"].update(
+                    visible=bool(valores["-PACIENTES-"])
+                )
+            elif (
+                permitir_selecao
+                and evento == "-SELECIONAR-"
+                and valores["-PACIENTES-"]
+            ):
+                paciente = pacientes[linhas.index(valores["-PACIENTES-"][0])]
+                janela.close()
+                return paciente
 
     def mostra_mensagem(self, mensagem):
         sg.popup_ok(mensagem, title="Paciente")

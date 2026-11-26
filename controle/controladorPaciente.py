@@ -57,26 +57,40 @@ class ControladorPaciente:
         except (ValueError, PacienteRepetidoException, AcompanhanteObrigatorioException) as e:
             self.__tela_paciente.mostra_mensagem(str(e))
 
-    def listar_pacientes(self):
+    def listar_pacientes(self, permitir_selecao=False):
         if not self.__pacientes:
             raise ListaVaziaException("pacientes")
-        self.__tela_paciente.lista_pacientes(self.__pacientes)
+        paciente_selecionado = self.__tela_paciente.lista_pacientes(
+            self.__pacientes,
+            permitir_selecao=permitir_selecao,
+        )
+        if permitir_selecao:
+            return paciente_selecionado
         return self.__pacientes
 
     def remover_paciente(self):
         try:
-            self.listar_pacientes()
+            paciente_selecionado = self.listar_pacientes(permitir_selecao=True)
         except ListaVaziaException as e:
             self.__tela_paciente.mostra_mensagem(str(e))
             return
 
+        if paciente_selecionado is None:
+            return
+
         try:
-            cpf = self.__tela_paciente.seleciona_paciente()
+            cpf = self.__tela_paciente.seleciona_paciente(paciente_selecionado)
         except EntradaInvalidaException as e:
             self.__tela_paciente.mostra_mensagem(str(e))
             return
 
         if cpf is None:
+            return
+
+        if cpf != paciente_selecionado.cpf:
+            self.__tela_paciente.mostra_mensagem(
+                "O CPF informado não corresponde ao paciente selecionado."
+            )
             return
 
         try:
