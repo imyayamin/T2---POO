@@ -21,7 +21,12 @@ class ControladorProfissional:
         return None
 
     def incluir_profissional(self):
+        # Linha anterior comentada: agora o formulário gráfico permite cancelar
+        # e retorna None nesse caso, então os dados precisam ser conferidos.
+        # dados_profissional = self.__tela_profissional.pega_dados_profissional()
         dados_profissional = self.__tela_profissional.pega_dados_profissional()
+        if dados_profissional is None:
+            return
         p = self.pega_profissional_por_cpf(dados_profissional["cpf"])
 
         try:
@@ -41,34 +46,55 @@ class ControladorProfissional:
 
 
     def alterar_profissional(self):
-        self.lista_profissionais()
-        cpf_profissional = self.__tela_profissional.seleciona_profissional()
-        profissional = self.pega_profissional_por_cpf(cpf_profissional)
+        # Linhas anteriores comentadas: antes, a lista apenas era exibida e o
+        # CPF era digitado em outra janela; agora a lista retorna o selecionado.
+        # self.lista_profissionais()
+        # cpf_profissional = self.__tela_profissional.seleciona_profissional()
+        # profissional = self.pega_profissional_por_cpf(cpf_profissional)
+        profissional = self.lista_profissionais(permitir_selecao=True)
+        if profissional is None:
+            return
 
         try:
             if(profissional is not None):
                 novos_dados_profissional = self.__tela_profissional.pega_dados_profissional()
+                if novos_dados_profissional is None:
+                    return
                 profissional.nome = novos_dados_profissional["nome"]
                 profissional.celular = novos_dados_profissional["celular"]
                 profissional.cpf = novos_dados_profissional["cpf"]
                 profissional.especialidade = novos_dados_profissional["especialidade"]
                 profissional.registro_profissional = novos_dados_profissional["registro_profissional"]
-                self.profissionais()
+                
+                self.__tela_profissional.mostra_mensagem("Profissional atualizado com sucesso!")
         except ProfissionalNaoEncontradoException as e:
             self.__tela_profissional.mostra_mensagem(e)
 
-    def lista_profissionais(self):
+    def lista_profissionais(self, permitir_selecao=False):
         if not self.__profissionais:
             raise ListaVaziaException("profissionais")
-        self.__tela_profissional.lista_profissionais(self.__profissionais)
+        resultado = self.__tela_profissional.lista_profissionais(
+            self.__profissionais,
+            permitir_selecao=permitir_selecao,
+        )
+        if permitir_selecao:
+            return resultado
         return self.__profissionais
 
     def excluir_profissional(self):
-        self.lista_profissionais()
-        cpf_profissional = self.__tela_profissional.seleciona_profissional()
-        if cpf_profissional is None:
+        profissional = self.lista_profissionais(permitir_selecao=True)
+        if profissional is None:
             return
-        profissional = self.pega_profissional_por_cpf(cpf_profissional)
+
+        cpf_confirmacao = self.__tela_profissional.seleciona_profissional(profissional)
+        if cpf_confirmacao is None:
+            return
+        if cpf_confirmacao != profissional.cpf:
+            self.__tela_profissional.mostra_mensagem(
+                "O CPF informado não corresponde ao profissional selecionado."
+            )
+            return
+
         try:
             if profissional is not None:
                 self.__profissionais.remove(profissional)
