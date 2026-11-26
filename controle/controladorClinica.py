@@ -1,6 +1,6 @@
 from entidade.clinica import Clinica
 from limite.telaClinica import TelaClinica
-from exceptions.exceptions import (ListaVaziaException, ClinicaRepetidaException, ClinicaNaoEncontradaException, HorarioInvalidoException, EntradaInvalidaException)
+from exceptions.exceptions import (ListaVaziaException, ClinicaRepetidaException, HorarioInvalidoException)
 
 class ControladorClinica:
 
@@ -22,8 +22,11 @@ class ControladorClinica:
     def incluir_clinica(self):
         try:
             dados_clinica = self.__tela_clinica.pega_dados_clinica()
-        except EntradaInvalidaException as e:
+        except ValueError as e:
             self.__tela_clinica.mostra_mensagem(str(e))
+            return
+
+        if dados_clinica is None:
             return
 
         try:
@@ -50,34 +53,29 @@ class ControladorClinica:
         except (HorarioInvalidoException, ClinicaRepetidaException) as e:
             self.__tela_clinica.mostra_mensagem(str(e))
 
-    def listar_clinicas(self):
+    def listar_clinicas(self, permitir_selecao=False):
         if not self.__clinicas:
             raise ListaVaziaException("clínicas")
-        self.__tela_clinica.lista_clinicas(self.__clinicas)
+        clinica_selecionada = self.__tela_clinica.lista_clinicas(
+            self.__clinicas,
+            permitir_selecao=permitir_selecao,
+        )
+        if permitir_selecao:
+            return clinica_selecionada
         return self.__clinicas
 
     def remover_clinica(self):
         try:
-            self.listar_clinicas()
+            clinica = self.listar_clinicas(permitir_selecao=True)
         except ListaVaziaException as e:
             self.__tela_clinica.mostra_mensagem(str(e))
             return
 
-        try:
-            nome = self.__tela_clinica.seleciona_clinica()
-        except EntradaInvalidaException as e:
-            self.__tela_clinica.mostra_mensagem(str(e))
+        if clinica is None:
             return
 
-        try:
-            clinica = self.pega_clinica_por_nome(nome)
-            if clinica is None:
-                raise ClinicaNaoEncontradaException(nome)
-
-            self.__clinicas.remove(clinica)
-            self.__tela_clinica.mostra_mensagem("Clínica removida com sucesso!")
-        except ClinicaNaoEncontradaException as e:
-            self.__tela_clinica.mostra_mensagem(str(e))
+        self.__clinicas.remove(clinica)
+        self.__tela_clinica.mostra_mensagem("Clínica removida com sucesso!")
 
     def retornar(self):
         self.__controladorGeral.abre_tela()
