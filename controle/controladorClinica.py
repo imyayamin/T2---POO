@@ -1,11 +1,13 @@
 from entidade.clinica import Clinica
 from limite.telaClinica import TelaClinica
+from persistencia.repositorioClinica import RepositorioClinica
 from exceptions.exceptions import (ListaVaziaException, ClinicaRepetidaException, HorarioInvalidoException)
 
 class ControladorClinica:
 
     def __init__(self, controladorGeral):
-        self.__clinicas = []
+        self.__repositorio = RepositorioClinica()
+        self.__clinicas = self.__repositorio.carregar()
         self.__tela_clinica = TelaClinica()
         self.__controladorGeral = controladorGeral
 
@@ -48,6 +50,7 @@ class ControladorClinica:
                 horario_final
             )
             self.__clinicas.append(nova_clinica)
+            self.__repositorio.salvar(self.__clinicas)
             self.__tela_clinica.mostra_mensagem("Clínica cadastrada com sucesso!")
 
         except (HorarioInvalidoException, ClinicaRepetidaException) as e:
@@ -75,6 +78,7 @@ class ControladorClinica:
             return
 
         self.__clinicas.remove(clinica)
+        self.__repositorio.salvar(self.__clinicas)
         self.__tela_clinica.mostra_mensagem("Clínica removida com sucesso!")
 
     def retornar(self):

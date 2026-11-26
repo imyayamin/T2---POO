@@ -1,12 +1,14 @@
 from limite.telaProfissional import TelaProfissional
 from entidade.profissional import Profissional
+from persistencia.repositorioProfissional import RepositorioProfissional
 from exceptions.exceptions import (ProfissionalRepetidoException, ProfissionalNaoEncontradoException, ListaVaziaException)
 
 
 class ControladorProfissional:
 
     def __init__(self, controladorGeral):
-        self.__profissionais = []
+        self.__repositorio = RepositorioProfissional()
+        self.__profissionais = self.__repositorio.carregar()
         self.__tela_profissional = TelaProfissional()
         self.__controladorGeral = controladorGeral
 
@@ -39,6 +41,7 @@ class ControladorProfissional:
                 dados_profissional["registro_profissional"]
                 )
                 self.__profissionais.append(profissional)
+                self.__repositorio.salvar(self.__profissionais)
             else:
                 raise ProfissionalRepetidoException(dados_profissional["cpf"])
         except ProfissionalRepetidoException as e:
@@ -65,7 +68,7 @@ class ControladorProfissional:
                 profissional.cpf = novos_dados_profissional["cpf"]
                 profissional.especialidade = novos_dados_profissional["especialidade"]
                 profissional.registro_profissional = novos_dados_profissional["registro_profissional"]
-                
+                self.__repositorio.salvar(self.__profissionais)
                 self.__tela_profissional.mostra_mensagem("Profissional atualizado com sucesso!")
         except ProfissionalNaoEncontradoException as e:
             self.__tela_profissional.mostra_mensagem(e)
@@ -98,6 +101,7 @@ class ControladorProfissional:
         try:
             if profissional is not None:
                 self.__profissionais.remove(profissional)
+                self.__repositorio.salvar(self.__profissionais)
                 self.__tela_profissional.mostra_mensagem("Profissional removido com sucesso!")
                 self.lista_profissionais()
         except ProfissionalNaoEncontradoException as e:
