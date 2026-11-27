@@ -1,140 +1,86 @@
 from datetime import date, time
 
+import FreeSimpleGUI as sg
+
+
 class TelaAtendimento:
-    def __init__(self, controladorAtendimento, controladorClinica, controladorPaciente, controladorProfissional):
-        self.__controladorAtendimento = (controladorAtendimento)
-        self.__controladorClinica = (controladorClinica)
-        self.__controladorPaciente = (controladorPaciente)
-        self.__controladorProfissional = (controladorProfissional)
+    def __init__(
+        self,
+        controladorAtendimento,
+        controladorClinica,
+        controladorPaciente,
+        controladorProfissional,
+    ):
+        self.__controladorAtendimento = controladorAtendimento
+        self.__controladorClinica = controladorClinica
+        self.__controladorPaciente = controladorPaciente
+        self.__controladorProfissional = controladorProfissional
 
     def tela_opcoes(self):
-        print("\n========== ATENDIMENTOS ==========")
-        print("1 - Cadastrar atendimento")
-        print("2 - Listar atendimentos")
-        print("3 - Editar atendimento")
-        print("4 - Remover atendimento")
-        print("0 - Voltar")
-        print("==================================")
+        layout = [
+            [sg.Text("Atendimentos", font=("Segoe UI", 16, "bold"), justification="center", expand_x=True)],
+            [sg.Button("Cadastrar atendimento", size=(28, 2), key="-CADASTRAR-")],
+            [sg.Button("Listar atendimentos", size=(28, 2), key="-LISTAR-")],
+            [sg.Button("Editar atendimento", size=(28, 2), key="-EDITAR-")],
+            [sg.Button("Remover atendimento", size=(28, 2), key="-REMOVER-")],
+            [sg.Button("Voltar", size=(28, 2), key="-VOLTAR-")],
+        ]
 
-        try:
-            return int(input("Escolha uma opção: "))
-        except ValueError:
-            return None
+        janela = sg.Window("Atendimentos", layout, element_justification="center")
+        evento, _ = janela.read()
+        janela.close()
+
+        opcoes = {
+            "-CADASTRAR-": 1,
+            "-LISTAR-": 2,
+            "-EDITAR-": 3,
+            "-REMOVER-": 4,
+            "-VOLTAR-": 0,
+            sg.WIN_CLOSED: 0,
+        }
+        return opcoes.get(evento)
 
     def mostra_mensagem(self, mensagem):
-        print(mensagem)
+        sg.popup_ok(str(mensagem), title="Atendimento")
 
     def escolher_clinica(self):
-
-        clinicas = self.__controladorClinica.clinicas
-
-        if not clinicas:
-            print("Nenhuma clínica cadastrada.")
-            return None
-
-        print("\nClínicas cadastradas:")
-
-        for i, clinica in enumerate(clinicas, start=1):
-            print(f"{i} - {clinica.nome}")
-
-        while True:
-            try:
-                opcao = int(input("Escolha a clínica: "))
-
-                if 1 <= opcao <= len(clinicas):
-                    return clinicas[opcao - 1]
-                print("Opção inválida.")
-
-            except ValueError:
-                print("Digite um número válido.")
+        return self.__seleciona_item(
+            self.__controladorClinica.clinicas,
+            "Clínicas cadastradas",
+            "Nenhuma clínica cadastrada.",
+            self.__formata_clinica,
+        )
 
     def escolher_paciente(self):
-        pacientes = self.__controladorPaciente.pacientes
-
-        if not pacientes:
-            print("Nenhum paciente cadastrado.")
-            return None
-
-        print("\nPacientes cadastrados:")
-        for i, paciente in enumerate(pacientes, start=1):
-            print(f"{i} - {paciente.nome}")
-
-        while True:
-            try:
-                opcao = int(input("Escolha o paciente: "))
-                if 1 <= opcao <= len(pacientes):
-                    return pacientes[opcao - 1]
-                print("Opção inválida.")
-            except ValueError:
-                print("Digite um número válido.")
+        return self.__seleciona_item(
+            self.__controladorPaciente.pacientes,
+            "Pacientes cadastrados",
+            "Nenhum paciente cadastrado.",
+            self.__formata_paciente,
+        )
 
     def escolher_profissional(self):
-        profissionais = self.__controladorProfissional.profissionais
-
-        profissionais = (self.__controladorProfissional.profissionais)
-
-        if not profissionais:
-            print("Nenhum profissional cadastrado.")
-            return None
-
-        print("\nProfissionais cadastrados:")
-
-        for i, profissional in enumerate(profissionais, start=1):
-            print(f"{i} - {profissional.nome}")
-
-        while True:
-            try:
-                opcao = int(input("Escolha o profissional: "))
-
-                if 1 <= opcao <= len(profissionais):
-                    return profissionais[opcao - 1]
-
-                print("Opção inválida.")
-            except ValueError:
-                print("Digite um número válido.")
+        return self.__seleciona_item(
+            self.__controladorProfissional.profissionais,
+            "Profissionais cadastrados",
+            "Nenhum profissional cadastrado.",
+            self.__formata_profissional,
+        )
 
     def escolher_tipo_atendimento(self):
-        print("\nTipos de atendimento:")
-        print("1 - Consulta")
-        print("2 - Exame")
-        print("3 - Retorno")
-        print("4 - Outro")
+        tipos = ["Consulta", "Exame", "Retorno", "Outro"]
+        layout = [
+            [sg.Text("Tipo de atendimento")],
+            [sg.Combo(tipos, default_value=tipos[0], readonly=True, key="-TIPO-")],
+            [sg.Button("Confirmar", key="-CONFIRMAR-"), sg.Button("Cancelar", key="-CANCELAR-")],
+        ]
+        janela = sg.Window("Tipo de atendimento", layout, modal=True)
+        evento, valores = janela.read()
+        janela.close()
 
-        tipos = {"1": "Consulta", "2": "Exame", "3": "Retorno", "4": "Outro"}
-        tipo = tipos.get(input("Escolha o tipo de atendimento: ").strip())
-        if tipo is None:
-            print("Opção inválida. Escolha um tipo válido.")
-        return tipo
-
-    def informar_data(self):
-        while True:
-
-            try:
-                return date.fromisoformat(input("Digite a data do atendimento(AAAA-MM-DD): "))
-
-            except ValueError:
-
-                print("Data inválida. Use o formato AAAA-MM-DD.")
-
-    def informar_horario_inicio(self):
-
-        while True:
-
-            try:
-                return time.fromisoformat(input("Digite o horário de início(HH:MM): "))
-
-            except ValueError:
-                print("Horário inválido. Use o formato HH:MM.")
-
-    def informar_horario_fim(self):
-
-        while True:
-
-            try:
-                return time.fromisoformat(input("Digite o horário de fim(HH:MM): "))
-
-            except ValueError:
-                print("Horário inválido. Use o formato HH:MM.")
+        if evento != "-CONFIRMAR-":
+            return None
+        return valores["-TIPO-"]
 
     def pega_dados_atendimento(self):
         clinica = self.escolher_clinica()
@@ -149,68 +95,169 @@ class TelaAtendimento:
         if profissional is None:
             return None
 
-        data = self.informar_data()
+        tipo_atendimento = self.escolher_tipo_atendimento()
+        if tipo_atendimento is None:
+            return None
+
+        layout = [
+            [sg.Text(f"Clínica: {clinica.nome} | Paciente: {paciente.nome}")],
+            [sg.Text(f"Profissional: {profissional.nome} | Tipo: {tipo_atendimento}")],
+            [sg.Text("Data (AAAA-MM-DD)")],
+            [sg.Input(key="-DATA-")],
+            [sg.Text("Horário de início (HH:MM)")],
+            [sg.Input(key="-INICIO-")],
+            [sg.Text("Horário de término (HH:MM)")],
+            [sg.Input(key="-FIM-")],
+            [sg.Text("", key="-ERRO-", text_color="red")],
+            [sg.Button("Salvar", key="-SALVAR-"), sg.Button("Cancelar", key="-CANCELAR-")],
+        ]
+        janela = sg.Window("Dados do atendimento", layout, modal=True)
 
         while True:
-            horario_inicio = self.informar_horario_inicio()
-            horario_fim = self.informar_horario_fim()
+            evento, valores = janela.read()
+            if evento in (sg.WIN_CLOSED, "-CANCELAR-"):
+                janela.close()
+                return None
+            if evento != "-SALVAR-":
+                continue
+
+            try:
+                data_atendimento = date.fromisoformat(valores["-DATA-"].strip())
+                horario_inicio = time.fromisoformat(valores["-INICIO-"].strip())
+                horario_fim = time.fromisoformat(valores["-FIM-"].strip())
+            except ValueError:
+                janela["-ERRO-"].update(
+                    "Data ou horário inválido. Use AAAA-MM-DD e HH:MM."
+                )
+                continue
 
             if horario_fim <= horario_inicio:
-                print("Erro: O horário final deve ser maior que o horário inicial.")
+                janela["-ERRO-"].update(
+                    "O horário final deve ser maior que o horário inicial."
+                )
                 continue
 
             if not self.__controladorAtendimento.horario_dentro_da_clinica(
                 clinica, horario_inicio, horario_fim
             ):
-                print(
-                    "Erro: o atendimento deve estar dentro do horário da clínica "
+                janela["-ERRO-"].update(
+                    "O atendimento deve ocorrer dentro do horário da clínica "
                     f"({clinica.horario_funcionamento_inicial}h às "
                     f"{clinica.horario_funcionamento_final}h)."
                 )
                 continue
-            break
 
-        tipo_atendimento = self.escolher_tipo_atendimento()
-        while tipo_atendimento is None:
-            tipo_atendimento = self.escolher_tipo_atendimento()
-
-        return {
-            "clinica": clinica,
-            "paciente": paciente,
-            "profissional": profissional,
-            "data": data,
-            "horario_inicio": horario_inicio,
-            "horario_fim": horario_fim,
-            "tipo_atendimento": tipo_atendimento,
-        }
+            janela.close()
+            return {
+                "clinica": clinica,
+                "paciente": paciente,
+                "profissional": profissional,
+                "data": data_atendimento,
+                "horario_inicio": horario_inicio,
+                "horario_fim": horario_fim,
+                "tipo_atendimento": tipo_atendimento,
+            }
 
     def lista_atendimentos(self, atendimentos):
         if not atendimentos:
             self.mostra_mensagem("Nenhum atendimento cadastrado.")
             return
 
-        print("\nAtendimentos cadastrados:")
-        for indice, atendimento in enumerate(atendimentos, start=1):
-            print(
-                f"{indice} - {atendimento.data.isoformat()} | "
-                f"{atendimento.horario_inicio.strftime('%H:%M')} às "
-                f"{atendimento.horario_fim.strftime('%H:%M')} | "
-                f"Paciente: {atendimento.paciente.nome} | "
-                f"Profissional: {atendimento.profissional.nome} | "
-                f"Clínica: {atendimento.clinica.nome} | "
-                f"Tipo: {atendimento.tipoAtendimento} | "
-                f"Valor: R$ {atendimento.valor:.2f}"
-            )
+        self.__mostra_lista(
+            atendimentos,
+            "Atendimentos cadastrados",
+            self.__formata_atendimento,
+        )
 
     def seleciona_atendimento(self, atendimentos):
+        if not atendimentos:
+            self.mostra_mensagem("Nenhum atendimento cadastrado.")
+            return None
+
+        return self.__seleciona_item(
+            atendimentos,
+            "Selecione um atendimento",
+            "Nenhum atendimento cadastrado.",
+            self.__formata_atendimento,
+        )
+
+    def __seleciona_item(self, itens, titulo, mensagem_vazia, formatador):
+        if not itens:
+            self.mostra_mensagem(mensagem_vazia)
+            return None
+
+        return self.__mostra_lista(
+            itens,
+            titulo,
+            formatador,
+            permitir_selecao=True,
+        )
+
+    def __mostra_lista(self, itens, titulo, formatador, permitir_selecao=False):
+        linhas = [formatador(item) for item in itens]
+        chave_lista = "-ITENS-"
+        layout = [
+            [sg.Text(titulo, font=("Segoe UI", 14, "bold"))],
+            [
+                sg.Listbox(
+                    linhas,
+                    size=(82, 12),
+                    expand_x=True,
+                    expand_y=True,
+                    key=chave_lista,
+                    enable_events=permitir_selecao,
+                )
+            ],
+            [
+                sg.Button("Fechar", key="-FECHAR-"),
+                sg.Button("Selecionar", key="-SELECIONAR-", visible=False),
+            ],
+        ]
+        janela = sg.Window(titulo, layout, modal=True, resizable=True)
+
         while True:
-            try:
-                escolha = int(input("Escolha o número do atendimento: "))
-            except ValueError:
-                self.mostra_mensagem("Digite um número válido.")
-                continue
+            evento, valores = janela.read()
+            if evento in (sg.WIN_CLOSED, "-FECHAR-"):
+                janela.close()
+                return None
 
-            if 1 <= escolha <= len(atendimentos):
-                return atendimentos[escolha - 1]
+            if permitir_selecao and evento == chave_lista:
+                janela["-SELECIONAR-"].update(
+                    visible=bool(valores[chave_lista])
+                )
+            elif (
+                permitir_selecao
+                and evento == "-SELECIONAR-"
+                and valores[chave_lista]
+            ):
+                item = itens[linhas.index(valores[chave_lista][0])]
+                janela.close()
+                return item
 
-            self.mostra_mensagem("Opção inválida.")
+    def __formata_clinica(self, clinica):
+        return (
+            f"{clinica.nome} | Cidade: {clinica.cidade} | "
+            f"Horário: {clinica.horario_funcionamento_inicial}h às "
+            f"{clinica.horario_funcionamento_final}h"
+        )
+
+    def __formata_paciente(self, paciente):
+        return f"{paciente.nome} | CPF: {paciente.cpf}"
+
+    def __formata_profissional(self, profissional):
+        return (
+            f"{profissional.nome} | CPF: {profissional.cpf} | "
+            f"Especialidade: {profissional.especialidade}"
+        )
+
+    def __formata_atendimento(self, atendimento):
+        return (
+            f"{atendimento.data.isoformat()} | "
+            f"{atendimento.horario_inicio.strftime('%H:%M')} às "
+            f"{atendimento.horario_fim.strftime('%H:%M')} | "
+            f"Paciente: {atendimento.paciente.nome} | "
+            f"Profissional: {atendimento.profissional.nome} | "
+            f"Clínica: {atendimento.clinica.nome} | "
+            f"Tipo: {atendimento.tipoAtendimento} | "
+            f"Valor: R$ {atendimento.valor:.2f}"
+        )

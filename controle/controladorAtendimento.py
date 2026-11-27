@@ -1,14 +1,17 @@
 from entidade.atendimento import Atendimento
 from limite.telaAtendimento import TelaAtendimento
+from persistencia.repositorioAtendimento import RepositorioAtendimento
 from datetime import time
 
 class ControladorAtendimento:
     def __init__(self, controladorGeral, ControladorClinica, ControladorPaciente, ControladorProfissional):
-        self.__atendimentos = []
         self.__controladorGeral = controladorGeral
         self.__controladorClinica = ControladorClinica
         self.__controladorPaciente = ControladorPaciente
         self.__controladorProfissional = ControladorProfissional
+        self.__repositorio = RepositorioAtendimento()
+        self.__atendimentos = self.__repositorio.carregar()
+        self.__reconciliar_referencias()
         self.__tela_atendimento = TelaAtendimento(
             self, 
             self.__controladorClinica, 
@@ -19,6 +22,45 @@ class ControladorAtendimento:
     @property
     def atendimentos(self):
         return self.__atendimentos
+
+    def salvar_atendimentos(self):
+        self.__repositorio.salvar(self.__atendimentos)
+
+    def __reconciliar_referencias(self):
+        clinicas = {
+            clinica.nome: clinica
+            for clinica in self.__controladorClinica.clinicas
+        }
+        pacientes = {
+            paciente.cpf: paciente
+            for paciente in self.__controladorPaciente.pacientes
+        }
+        profissionais = {
+            profissional.cpf: profissional
+            for profissional in self.__controladorProfissional.profissionais
+        }
+
+        for atendimento in self.__atendimentos:
+            clinica = clinicas.get(atendimento.clinica.nome)
+            if clinica is not None:
+                atendimento.clinica = clinica
+
+            paciente = pacientes.get(atendimento.paciente.cpf)
+            if paciente is not None:
+                atendimento.paciente = paciente
+
+            profissional = profissionais.get(atendimento.profissional.cpf)
+            if profissional is not None:
+                atendimento.profissional = profissional
+
+            for procedimento in atendimento.procedimentos:
+                profissional = profissionais.get(procedimento.profissional.cpf)
+                if profissional is not None:
+                    procedimento.profissional = profissional
+
+            for pagamento in atendimento.pagamentos:
+                pagamento.atendimento = atendimento
+                pagamento.paciente = atendimento.paciente
 
     def abre_tela(self):
         lista_opcoes = {
@@ -77,6 +119,7 @@ class ControladorAtendimento:
             valor,
         )
         self.__atendimentos.append(novo)
+        self.salvar_atendimentos()
         return "Atendimento agendado com sucesso!"
 
     def validar_atendimento(
@@ -138,7 +181,6 @@ class ControladorAtendimento:
             )
             return
 
-        self.listar_atendimentos()
         atendimento = self.__tela_atendimento.seleciona_atendimento(
             self.__atendimentos
         )
@@ -159,6 +201,8 @@ class ControladorAtendimento:
 
         atendimento.clinica = dados["clinica"]
         atendimento.paciente = dados["paciente"]
+        for pagamento in atendimento.pagamentos:
+            pagamento.paciente = atendimento.paciente
         atendimento.profissional = dados["profissional"]
         atendimento.data = dados["data"]
         atendimento.horario_inicio = dados["horario_inicio"]
@@ -167,6 +211,7 @@ class ControladorAtendimento:
         atendimento.valor = self.obter_valor_atendimento(
             dados["tipo_atendimento"]
         )
+        self.salvar_atendimentos()
         self.__tela_atendimento.mostra_mensagem(
             "Atendimento atualizado com sucesso."
         )
@@ -178,7 +223,6 @@ class ControladorAtendimento:
             )
             return
 
-        self.listar_atendimentos()
         atendimento = self.__tela_atendimento.seleciona_atendimento(
             self.__atendimentos
         )
@@ -186,6 +230,7 @@ class ControladorAtendimento:
             return
 
         self.__atendimentos.remove(atendimento)
+        self.salvar_atendimentos()
         self.__tela_atendimento.mostra_mensagem(
             "Atendimento removido com sucesso."
         )

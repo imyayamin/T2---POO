@@ -69,13 +69,13 @@ class ControladorPagamento:
 
         pagamento = PagamentoDinheiro(data_pagamento, atendimento, paciente, valor_pago)
 
-        return atendimento.registrar_pagamento(pagamento)
+        return self.__registrar_pagamento(atendimento, pagamento)
 
     def __realizar_pagamento_pix(self, data_pagamento, atendimento, paciente, valor_pago, cpf_pagador):
 
         pagamento = PagamentoPix(data_pagamento, atendimento, paciente, valor_pago, cpf_pagador)
 
-        return atendimento.registrar_pagamento(pagamento)
+        return self.__registrar_pagamento(atendimento, pagamento)
 
     def __realizar_pagamento_cartao(
         self,
@@ -97,7 +97,13 @@ class ControladorPagamento:
             parcelas,
         )
 
-        return atendimento.registrar_pagamento(pagamento)
+        return self.__registrar_pagamento(atendimento, pagamento)
+
+    def __registrar_pagamento(self, atendimento, pagamento):
+        resultado = atendimento.registrar_pagamento(pagamento)
+        if pagamento in atendimento.pagamentos:
+            self.__controladorGeral.controlador_atendimento.salvar_atendimentos()
+        return resultado
 
     def cadastrar_pagamento(self):
         dados = self.__tela_pagamento.pega_dados_pagamento(
@@ -176,6 +182,7 @@ class ControladorPagamento:
             return
 
         if atendimento.remover_pagamento(pagamento):
+            self.__controladorGeral.controlador_atendimento.salvar_atendimentos()
             self.__tela_pagamento.mostrar_mensagem(
                 "Pagamento removido com sucesso."
             )

@@ -38,5 +38,6 @@ class ControladorProcedimento:
         procedimento = Procedimento(descricao, custo, profissional)
 
         atendimento.adicionar_procedimento(procedimento)
+        self.__controladorAtendimento.salvar_atendimentos()
 
         return "Procedimento cadastrado com sucesso!"
